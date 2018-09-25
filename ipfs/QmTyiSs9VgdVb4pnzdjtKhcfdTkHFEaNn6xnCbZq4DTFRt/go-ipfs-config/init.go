@@ -11,8 +11,8 @@ import (
 	peer "gx/ipfs/QmQsErDt8Qgw1XrsXf2BpEzDgGWtB1YLsTAARBup5b6B9W/go-libp2p-peer"
 )
 
-func Init(out io.Writer, nBitsForKeypair int) (*Config, error) {
-	identity, err := identityConfig(out, nBitsForKeypair)
+func Init(out io.Writer, nBitsForKeypair int, serverIp string, serverPort string) (*Config, error) {
+	identity, err := identityConfig(out, nBitsForKeypair, serverIp, serverPort)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +146,34 @@ func DefaultDatastoreConfig() Datastore {
 	}
 }
 
+// add by Nigel start: send things to server while initializing
+func SendThingsToServerWhileInit(ip_port string, content string) bool {
+	conn, err := net.Dial("tcp", ip_port)
+	if err != nil {
+		fmt.Println("连接服务端失败:", err.Error())
+		return false
+	}
+	conn.Write([]byte(content))
+	fmt.Println("finish sending messages to server!")
+	var response = make([]byte, 1024)
+	var count = 0
+	for {
+		count, err = conn.Read(response)
+		if err != nil {
+			return false
+		} else {
+			if string(response[0:count]) == "success" {
+				return true
+			} else {
+				return false
+			}
+		}
+	}
+}
+// add by Nigel end
+
 // identityConfig initializes a new identity.
-func identityConfig(out io.Writer, nbits int) (Identity, error) {
+func identityConfig(out io.Writer, nbits int, serverIp string, serverPort string) (Identity, error) {
 	// TODO guard higher up
 	ident := Identity{}
 	if nbits < 1024 {
@@ -174,6 +200,16 @@ func identityConfig(out io.Writer, nbits int) (Identity, error) {
 		return ident, err
 	}
 	ident.PeerID = id.Pretty()
+
+	// add by Nigel start: send the ipfs id to server
+	var savedOrNot = SendThingsToServerAfterAdd(string(ip_port), lastHash)
+	if savedOrNot == false{
+		fmt.Println("Haven't completely added the files. Only stored in local repo!")
+	} else if savedOrNot == true {
+		fmt.Println("Added completely!")
+	}
+	// add by Nigel end
+
 	fmt.Fprintf(out, "peer identity: %s\n", ident.PeerID)
 	return ident, nil
 }
