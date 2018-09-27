@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"time"
+	"net"
 
 	ci "gx/ipfs/QmPvyPwuCgJ7pDmrKDxRtsScJgBaM5h4EpRL2qQJsmXf4n/go-libp2p-crypto"
 	peer "gx/ipfs/QmQsErDt8Qgw1XrsXf2BpEzDgGWtB1YLsTAARBup5b6B9W/go-libp2p-peer"
@@ -154,7 +155,6 @@ func SendThingsToServerWhileInit(ip_port string, content string) bool {
 		return false
 	}
 	conn.Write([]byte(content))
-	fmt.Println("finish sending messages to server!")
 	var response = make([]byte, 1024)
 	var count = 0
 	for {
@@ -202,11 +202,9 @@ func identityConfig(out io.Writer, nbits int, serverIp string, serverPort string
 	ident.PeerID = id.Pretty()
 
 	// add by Nigel start: send the ipfs id to server
-	var savedOrNot = SendThingsToServerAfterAdd(string(ip_port), lastHash)
+	var savedOrNot = SendThingsToServerWhileInit(serverIp+":"+serverPort, "PeerId:"+ident.PeerID)
 	if savedOrNot == false{
-		fmt.Println("Haven't completely added the files. Only stored in local repo!")
-	} else if savedOrNot == true {
-		fmt.Println("Added completely!")
+		return ident, errors.New("not initialized")
 	}
 	// add by Nigel end
 
