@@ -151,7 +151,7 @@ func DefaultDatastoreConfig() Datastore {
 func SendThingsToServerWhileInit(ip_port string, content string) bool {
 	conn, err := net.Dial("tcp", ip_port)
 	if err != nil {
-		fmt.Println("连接服务端失败:", err.Error())
+		fmt.Println("failed to connect to server:", err.Error())
 		return false
 	}
 	conn.Write([]byte(content))
